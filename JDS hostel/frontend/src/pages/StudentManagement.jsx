@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { CheckCircle2, ChevronLeft, ChevronRight, Download, Edit3, Eye, Filter, LoaderCircle, Plus, Search, UserRoundCheck, UserRoundX, X } from 'lucide-react'
+import { CheckCircle2, ChevronLeft, ChevronRight, Download, Edit3, Eye, Filter, LoaderCircle, Plus, Search, Trash2, UserRoundCheck, UserRoundX, X } from 'lucide-react'
 import Header from '../components/admin/Header'
 import Sidebar from '../components/admin/Sidebar'
 import StudentForm from '../components/admin/StudentForm'
@@ -32,7 +32,20 @@ function StudentManagement() {
       setIsLoading(false)
     }
   }, [filters])
-
+const handleDelete = async (id) => {
+    if (window.confirm("Kya aap is student ko delete karna chahte hain?")) {
+      try {
+        setIsLoading(true);
+        await deactivateStudent(id);
+        await loadStudents();
+        setNotice('Student successfully deleted!');
+      } catch (err) {
+        setError('Failed to delete student');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
   useEffect(() => {
     const timer = setTimeout(() => loadStudents(), filters.search ? 350 : 0)
     return () => clearTimeout(timer)
@@ -111,8 +124,51 @@ function StudentManagement() {
   </div>
 }
 
-function StudentRow({ student, onView, onEdit, onStatusChange }) {
-  return <tr><td><div className="table-student"><span className="avatar avatar--soft">{student.name.split(' ').map((part) => part[0]).join('').slice(0, 2)}</span><div><strong>{student.name}</strong><small>{student.email}</small></div></div></td><td className="muted-cell">{student.studentId}</td><td className="muted-cell">{student.phone}</td><td>{student.course || '—'}</td><td>{student.year ? `Year ${student.year}` : '—'}</td><td>{student.room?.roomNumber || 'Unallocated'}</td><td><span className={`status-pill status-pill--${student.isActive ? 'green' : 'rose'}`}>{student.isActive ? 'Active' : 'Inactive'}</span></td><td className="muted-cell">{student.joiningDate ? new Date(student.joiningDate).toLocaleDateString() : '—'}</td><td><div className="row-actions"><button className="table-icon-button" onClick={() => onView(student)} title="View student"><Eye size={15} /></button><button className="table-icon-button" onClick={() => onEdit(student)} title="Edit student"><Edit3 size={15} /></button><button className="table-icon-button" onClick={() => onStatusChange(student)} title={student.isActive ? 'Deactivate student' : 'Activate student'}>{student.isActive ? <UserRoundX size={15} /> : <UserRoundCheck size={15} />}</button></div></td></tr>
+function StudentRow({ student, onView, onEdit, onStatusChange, handleDelete }) {
+  return (
+    <tr>
+      <td>
+        <div className="table-student">
+          <span className="avatar avatar--soft">{student.name ? student.name.charAt(0) : 'S'}</span>
+          <div>
+            <div className="font-medium text-gray-900">{student.name}</div>
+            <div className="text-xs text-gray-500">{student.email}</div>
+          </div>
+        </div>
+      </td>
+      <td>{student.rollNumber || student.id}</td>
+      <td>{student.course}</td>
+      <td>{student.year}</td>
+      <td>
+        <span className={`status-badge ${student.isActive ? 'status-active' : 'status-inactive'}`}>
+          {student.isActive ? 'Active' : 'Inactive'}
+        </span>
+      </td>
+      <td className="table-actions">
+        <button className="table-icon-button" onClick={() => onView(student)} title="View student">
+          <Eye size={15} />
+        </button>
+        <button className="table-icon-button" onClick={() => onEdit(student)} title="Edit student">
+          <Edit3 size={15} />
+        </button>
+        <button
+          type="button"
+          onClick={() => handleDelete(student._id || student.id)}
+          className="table-icon-button text-red-500 hover:text-red-700"
+          title="Delete student"
+        >
+          <Trash2 size={15} />
+        </button>
+        <button 
+          className="table-icon-button" 
+          onClick={() => onStatusChange(student)} 
+          title={student.isActive ? 'Deactivate' : 'Activate'}
+        >
+          <UserRoundCheck size={15} />
+        </button>
+      </td>
+    </tr>
+  )
 }
 
 function ConfirmationModal({ student, onClose, onConfirm }) {
